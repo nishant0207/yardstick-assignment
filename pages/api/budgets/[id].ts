@@ -19,7 +19,7 @@ export default async function handler(
           id,
           { category, amount, month },
           { new: true }
-        );
+        ).exec();
         if (!updatedBudget)
           return res.status(404).json({ message: "Budget not found" });
         return res.status(200).json(updatedBudget);
@@ -31,7 +31,7 @@ export default async function handler(
 
     case "DELETE":
       try {
-        const deletedBudget = await Budget.findByIdAndDelete(id);
+        const deletedBudget = await Budget.findByIdAndDelete(id).exec();;
         if (!deletedBudget)
           return res.status(404).json({ message: "Budget not found" });
         return res
