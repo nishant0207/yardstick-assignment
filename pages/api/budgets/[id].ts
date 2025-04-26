@@ -11,13 +11,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const { category, amount, month } = req.body;
 
-        const updateQuery = Budget.findByIdAndUpdate(
+        const updatedBudget = await Budget.findByIdAndUpdate(
           id,
           { category, amount, month },
           { new: true }
         );
-
-        const updatedBudget = await updateQuery.exec(); // <--- IMPORTANT!
 
         if (!updatedBudget) {
           return res.status(404).json({ message: 'Budget not found' });
@@ -31,8 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'DELETE':
       try {
-        const deleteQuery = Budget.findByIdAndDelete(id);
-        const deletedBudget = await deleteQuery.exec();
+        const deletedBudget = await Budget.findByIdAndDelete(id);
 
         if (!deletedBudget) {
           return res.status(404).json({ message: 'Budget not found' });
