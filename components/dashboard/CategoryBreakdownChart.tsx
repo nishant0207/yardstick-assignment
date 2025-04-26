@@ -46,6 +46,9 @@ export default function CategoryBreakdownChart({
     color: COLORS[index % COLORS.length]
   }));
 
+  // Compute total value for legend percentages
+  const totalValue = chartData.reduce((sum, entry) => sum + entry.value, 0);
+
   return (
     <div className="card">
       {title && <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">{title}</h2>}
@@ -82,17 +85,15 @@ export default function CategoryBreakdownChart({
               data={chartData}
               cx="50%"
               cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              innerRadius={60}
               outerRadius={100}
               fill="#8884d8"
               dataKey="value"
+              labelLine={false}
+              label={false}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={COLORS[index % COLORS.length]} 
-                />
+                <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip 
@@ -102,6 +103,24 @@ export default function CategoryBreakdownChart({
                 borderColor: isDarkMode ? '#4b5563' : '#e5e7eb',
                 color: isDarkMode ? '#f3f4f6' : '#111827',
                 borderRadius: '6px' 
+              }}
+            />
+            <Legend
+              layout="horizontal"
+              align="center"
+              verticalAlign="bottom"
+              wrapperStyle={{
+                marginTop: 20,
+                color: textColor,
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: '1rem',
+              }}
+              formatter={(value: string) => {
+                const entry = chartData.find(e => e.name === value);
+                const percent = entry ? ((entry.value / totalValue) * 100).toFixed(0) : '0';
+                return `${value}: ${percent}%`;
               }}
             />
           </PieChart>
@@ -149,4 +168,4 @@ export default function CategoryBreakdownChart({
       </ResponsiveContainer>
     </div>
   );
-} 
+}
