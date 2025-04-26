@@ -52,3 +52,5 @@ Built using modern web technologies:
 ---
 
 ## 🚀 Live Demo
+
+https://yardstick-assignment-alpha.vercel.app/
