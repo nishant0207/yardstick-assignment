@@ -12,7 +12,7 @@ import SavingsOverview from "@/components/dashboard/SavingsOverview";
 import { useTheme } from '@/contexts/ThemeContext';
 import Layout from '@/components/Layout';
 
-// Define the data structure to match our coomponent interfaces
+// Define the data structure to match our component interfaces
 interface StatsData {
   totalExpenses: number;
   categoryBreakdown: { [key: string]: number };
