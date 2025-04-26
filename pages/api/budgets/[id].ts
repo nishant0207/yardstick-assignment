@@ -1,8 +1,7 @@
-// pages/api/budgets/[id].ts
-
 import type { NextApiRequest, NextApiResponse } from "next";
 import connectDB from "@/lib/mongodb";
 import Budget from "@/lib/models/Budget";
+import { ObjectId } from "mongodb";    // ← add this import
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,7 +9,6 @@ export default async function handler(
 ) {
   await connectDB();
   const { id } = req.query;
-
   if (!id || typeof id !== "string") {
     return res.status(400).json({ message: "Invalid ID" });
   }
@@ -19,19 +17,18 @@ export default async function handler(
     case "PUT":
       try {
         const { category, amount, month } = req.body;
-
-        // 1) update the document
-        const updateResult = await Budget.updateOne(
-          { _id: id },
-          { category, amount, month }
+        // 1) update via native driver to avoid Mongoose overload types
+        const updateResult = await Budget.collection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { category, amount, month } }
         );
-
         if (updateResult.matchedCount === 0) {
           return res.status(404).json({ message: "Budget not found" });
         }
-
-        // 2) fetch the newly updated document
-        const updatedBudget = await Budget.findById(id);
+        // 2) fetch updated doc
+        const updatedBudget = await Budget.collection.findOne({
+          _id: new ObjectId(id),
+        });
         return res.status(200).json(updatedBudget);
       } catch (error) {
         console.error("Error updating budget:", error);
@@ -42,7 +39,9 @@ export default async function handler(
 
     case "DELETE":
       try {
-        const deleteResult = await Budget.deleteOne({ _id: id });
+        const deleteResult = await Budget.collection.deleteOne({
+          _id: new ObjectId(id),
+        });
         if (deleteResult.deletedCount === 0) {
           return res.status(404).json({ message: "Budget not found" });
         }
