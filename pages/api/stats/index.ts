@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import connectDB from '../../../lib/mongodb';
 import Transaction from '../../../lib/models/Transaction';
 import Budget from '../../../lib/models/Budget';
-import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
@@ -21,9 +20,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const nextMonthStart = new Date(monthStart);
     nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
 
-    const transactions = await Transaction.find({
-      date: { $gte: monthStart, $lt: nextMonthStart }
-    });
+    const transactions = await Transaction.collection
+      .find({ date: { $gte: monthStart, $lt: nextMonthStart } })
+      .toArray();
 
     // 2. Total expenses for the month
     const totalExpenses = transactions.reduce((acc, tx) => acc + tx.amount, 0);
@@ -38,18 +37,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Monthly budgeted amounts
- const monthlyBudgeted: { _id: string; totalBudgeted: number }[] = await Budget.aggregate([
-   {
-     $group: {
-       _id: { $substr: ["$month", 0, 7] }, // "YYYY-MM"
-       totalBudgeted: { $sum: "$amount" },
-     },
-   },
-   { $sort: { _id: 1 } },
- ]);
+    const monthlyBudgeted = await Budget.collection
+      .aggregate([
+        {
+          $group: {
+            _id: { $substr: ["$month", 0, 7] }, // "YYYY-MM"
+            totalBudgeted: { $sum: "$amount" },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
 
     // 4. Fetch Budgets for this month
-    const budgets = await Budget.find({ month: currentMonth });
+    const budgets = await Budget.collection
+      .find({ month: currentMonth })
+      .toArray();
 
     // 5. Budget vs Actual comparison
     const budgetComparison = budgets.map(budget => {
@@ -65,20 +68,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 6. Monthly Expenses Bar Chart Data (last 6 months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5); // current month - 5 months
-    const monthlyExpenses = await Transaction.aggregate([
-      {
-        $match: {
-          date: { $gte: sixMonthsAgo }
-        }
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
-          total: { $sum: "$amount" }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    const monthlyExpenses = await Transaction.collection
+      .aggregate([
+        {
+          $match: {
+            date: { $gte: sixMonthsAgo }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+            total: { $sum: "$amount" }
+          }
+        },
+        { $sort: { _id: 1 } },
+      ])
+      .toArray();
 
     // Final response
     res.status(200).json({

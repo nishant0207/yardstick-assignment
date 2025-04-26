@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import connectDB from '../../../lib/mongodb';
 import Transaction from '../../../lib/models/Transaction';
+import { ObjectId } from "mongodb";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -10,25 +11,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'PUT':
       try {
         const { amount, date, description, category } = req.body;
-        const updatedTransaction = await Transaction.findByIdAndUpdate(
-          id,
-          { amount, date, description, category },
-          { new: true }
+        // 1) update via native driver
+        const updateResult = await Transaction.collection.updateOne(
+          { _id: new ObjectId(id as string) },
+          { $set: { amount, date, description, category } }
         );
-        if (!updatedTransaction) return res.status(404).json({ message: 'Transaction not found' });
-        res.status(200).json(updatedTransaction);
+        if (updateResult.matchedCount === 0) {
+          return res.status(404).json({ message: 'Transaction not found' });
+        }
+        // 2) fetch the updated document
+        const updatedTransaction = await Transaction.collection.findOne(
+          { _id: new ObjectId(id as string) }
+        );
+        return res.status(200).json(updatedTransaction);
       } catch (error) {
-        res.status(500).json({ message: 'Failed to update transaction', error });
+        return res.status(500).json({ message: 'Failed to update transaction', error });
       }
       break;
 
     case 'DELETE':
       try {
-        const deletedTransaction = await Transaction.findByIdAndDelete(id);
-        if (!deletedTransaction) return res.status(404).json({ message: 'Transaction not found' });
-        res.status(200).json({ message: 'Transaction deleted successfully' });
+        const deleteResult = await Transaction.collection.deleteOne(
+          { _id: new ObjectId(id as string) }
+        );
+        if (deleteResult.deletedCount === 0) {
+          return res.status(404).json({ message: 'Transaction not found' });
+        }
+        return res.status(200).json({ message: 'Transaction deleted successfully' });
       } catch (error) {
-        res.status(500).json({ message: 'Failed to delete transaction', error });
+        return res.status(500).json({ message: 'Failed to delete transaction', error });
       }
       break;
 
