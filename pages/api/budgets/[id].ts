@@ -15,7 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         const { category, amount, month } = req.body;
 
-        const query = Budget.findByIdAndUpdate(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query = (Budget as any).findByIdAndUpdate(
           id,
           { category, amount, month },
           { new: true }
@@ -35,7 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case "DELETE":
       try {
-        const query = Budget.findByIdAndDelete(id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const query = (Budget as any).findByIdAndDelete(id);
 
         const deletedBudget = await query.exec();
 
